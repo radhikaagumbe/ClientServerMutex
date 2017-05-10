@@ -9,8 +9,6 @@
 #include <pthread.h>
 #include "keyvaluestore.h"
 
-//int clientFileDiscriptor;
-//char cont[256],file_name[256], c;
 int n = 0,rm;
 
 time_t mytime;
@@ -26,8 +24,6 @@ void error(char *msg)
     perror(msg);
     exit(1);
 }
-
-//kvs_t * head = NULL;
 
 int main(int argc, char *argv[])
 {
@@ -75,20 +71,14 @@ int main(int argc, char *argv[])
     char cont[256],file_name[256];
     int del;
 
-      //    char *aa = "KEY NOT FOUND";
     char *ab = "KEY ALREADY EXIST, BUT NEW VALUE ADDED";
-//    printf("Entered the accept client function\n");
-//    kvs_t * head = (kvs_t *) malloc(sizeof(kvs_t));
 
     while(1){
       bzero(buffer,256);
-//      printf("Server reached Before read: %s\n",buffer);
       n = read(clientFileDiscriptor,buffer,255);
       printf("Server received after read: %s\n",buffer);
-  //    sleep(5);
       if (n <= 0)
       {
-      //  break;
          perror("ERROR reading from socket");
          return;
       }
@@ -96,7 +86,6 @@ int main(int argc, char *argv[])
       bzero(file_name,256);
       bzero(cont,256);
       int i,j=0,k,l=0,stoi;
-      //const char *errstr;
 
       k = buffer[0] - '0';
 
@@ -124,7 +113,6 @@ int main(int argc, char *argv[])
         printf("Value: %s\n",cont);
 
       kvs_t * temp1;
-  //    kvs_t * current;
       int qa;
       char test[256];
       char test1[256];
