@@ -24,7 +24,6 @@ int clientFileDiscriptor;
 
 int main(int argc, char *argv[])
 {
-  /*
     int portno, n, option;
     struct sockaddr_in serv_addr;
     struct hostent *server;
@@ -38,9 +37,9 @@ int main(int argc, char *argv[])
 
     portno = atoi(argv[2]);
 
-    sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    clientFileDiscriptor = socket(AF_INET, SOCK_STREAM, 0);
 
-    if (sockfd < 0){
+    if (clientFileDiscriptor < 0){
         error("Error opening socket");
     }
 
@@ -58,20 +57,7 @@ int main(int argc, char *argv[])
     bcopy((char *)server->h_addr,(char *)&serv_addr.sin_addr.s_addr,server->h_length);
     serv_addr.sin_port = htons(portno);
 
-    if (connect(sockfd,(struct sockaddr *)&serv_addr,sizeof(serv_addr)) < 0)
-    {
-        error("ERROR connecting");
-    }
-    */
-    struct sockaddr_in sock_var;
-    clientFileDiscriptor=socket(AF_INET,SOCK_STREAM,0);
-    char str_clnt[20],str_ser[20];
-
-    sock_var.sin_addr.s_addr=inet_addr("127.0.0.1");
-    sock_var.sin_port=3002;
-    sock_var.sin_family=AF_INET;
-
-    if(connect(clientFileDiscriptor,(struct sockaddr*)&sock_var,sizeof(sock_var))>=0)
+    if(connect(clientFileDiscriptor,(struct sockaddr*)&serv_addr,sizeof(serv_addr))>=0)
     {
 
     kvsPut(1,"One");

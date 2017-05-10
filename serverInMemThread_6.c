@@ -27,25 +27,50 @@ void error(char *msg)
 
 int main(int argc, char *argv[])
 {
-  struct sockaddr_in sock_var;
-  int serverFileDiscriptor=socket(AF_INET,SOCK_STREAM,0);
+//  struct sockaddr_in sock_var;
+  int portno, clilength;
+  int serverFileDiscriptor; //=socket(AF_INET,SOCK_STREAM,0);
+  struct sockaddr_in serv_addr, cli_addr;
   int clientFileDiscriptor;
   pthread_t t[20];
   int x;
+  int yes=1;
   head = (kvs_t *) malloc(sizeof(kvs_t));
 
-  sock_var.sin_addr.s_addr=inet_addr("127.0.0.1");
-  sock_var.sin_port=3002;
-  sock_var.sin_family=AF_INET;
-  if(bind(serverFileDiscriptor,(struct sockaddr*)&sock_var,sizeof(sock_var))>=0)
-    {
-     printf("socket has been created\n");
-     listen(serverFileDiscriptor,0);
+  if (argc < 2)
+      {
+          fprintf(stderr,"ERROR, no port provided\n");
+          exit(1);
+      }
+
+      //socket creation and restoring communication//
+      serverFileDiscriptor = socket(AF_INET, SOCK_STREAM, 0);
+
+      if (serverFileDiscriptor < 0)
+      {
+          error("ERROR opening socket");
+      }
+
+      bzero((char *) &serv_addr, sizeof(serv_addr));
+      portno = atoi(argv[1]);
+      serv_addr.sin_family = AF_INET;
+      serv_addr.sin_addr.s_addr = INADDR_ANY;
+      serv_addr.sin_port = htons(portno);
+
+      if (setsockopt(serverFileDiscriptor,SOL_SOCKET,SO_REUSEADDR,&yes,sizeof yes) == -1) {
+      perror("setsockopt");
+      exit(1);
+      }
+
+      if (bind(serverFileDiscriptor, (struct sockaddr *) &serv_addr,sizeof(serv_addr)) >= 0)
+      {
+      listen(serverFileDiscriptor,5);
+      clilength = sizeof(cli_addr);
 
      for(x=0;x<5;x++)      //can support 20 clients at a time
      {
       printf("Main thread: Waiting for new client\n");
-      clientFileDiscriptor=accept(serverFileDiscriptor,NULL,NULL);
+      clientFileDiscriptor=accept(serverFileDiscriptor,(struct sockaddr *) &cli_addr, &clilength);
       printf("Main Thread: Connected to client %d\n",clientFileDiscriptor);
       pthread_create(&t[x],NULL,accept_clients,(void *)clientFileDiscriptor);
      }
@@ -165,8 +190,8 @@ int main(int argc, char *argv[])
               break;
             }
         }
-          printf("Before closing new sockfd\n");
+          printf("Before closing new FileDiscriptor\n");
 
           close(clientFileDiscriptor);
-          printf("After closing new sockfd\n");
+          printf("After closing new FileDiscriptor\n");
       }
