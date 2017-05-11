@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <arpa/inet.h>
 
 void error(char *msg)
 {
@@ -19,46 +20,69 @@ void error(char *msg)
   void kvsDelete(int key1);
 
 
+int sockfd;
 //int sockfd;
-int clientFileDiscriptor;
 
 int main(int argc, char *argv[])
 {
-    int portno, n, option;
-    struct sockaddr_in serv_addr;
-    struct hostent *server;
-    int flag = 1;
+  int portno, n, option;
+  struct sockaddr_in serv_addr;
+  struct hostent *server;
+  int flag = 1;
+  struct in_addr ip;
+  int pton_err;
 
-    if (argc < 3)
-    {
-        fprintf(stderr,"usage %s port\n", argv[0]);
-        exit(1);
-    }
+  if (argc < 3)
+  {
+      fprintf(stderr,"usage %s port\n", argv[0]);
+      exit(1);
+  }
 
-    portno = atoi(argv[2]);
+  portno = atoi(argv[2]);
 
-    clientFileDiscriptor = socket(AF_INET, SOCK_STREAM, 0);
+  sockfd = socket(AF_INET, SOCK_STREAM, 0);
 
-    if (clientFileDiscriptor < 0){
-        error("Error opening socket");
-    }
+  if (sockfd < 0){
+      error("Error opening socket");
+  }
 
-    server = gethostbyname(argv[1]);
+/*
+  if ((inet_aton(argv[1], &ip)) == 0) {
+              error("Error parsing IP address");
+  }
+*/
+  // printf("%s\n", inet_ntoa(ip));
 
-    if (server == NULL)
-    {
-        fprintf(stderr,"Error! No such host exist\n");
-        exit(1);
-    }
+  //if ((server = gethostbyaddr((const void *)&ip, sizeof ip, AF_INET)) == NULL)
+  //        error("No name associated with IP address");
 
-    bzero((char *) &serv_addr,sizeof(serv_addr));
-    serv_addr.sin_family = AF_INET;
+  //  server = gethostbyname(argv[1]);
 
-    bcopy((char *)server->h_addr,(char *)&serv_addr.sin_addr.s_addr,server->h_length);
-    serv_addr.sin_port = htons(portno);
+/*
+  if (server == NULL)
+  {
+      fprintf(stderr,"Error! No such host exist\n");
+      exit(1);
+  }
+*/
+  bzero((char *) &serv_addr,sizeof(serv_addr));
+  serv_addr.sin_family = AF_INET;
 
-    if(connect(clientFileDiscriptor,(struct sockaddr*)&serv_addr,sizeof(serv_addr))>=0)
-    {
+  // copy((char *)server->h_addr,(char *)&serv_addr.sin_addr.s_addr,server->h_length);
+  serv_addr.sin_port = htons(portno);
+  pton_err= inet_pton(AF_INET, argv[1], &serv_addr.sin_addr);
+  if (pton_err <= 0) {
+    if (pton_err == 0)
+        fprintf(stderr, "Not in presentation format");
+    else
+        error("inet_pton");
+  }
+
+  if (connect(sockfd,(struct sockaddr *)&serv_addr,sizeof(serv_addr)) < 0)
+  {
+      error("ERROR connecting");
+  }
+
 
     kvsPut(1,"One");
     sleep(1);
@@ -114,11 +138,11 @@ int main(int argc, char *argv[])
     kvsGet(111);
     kvsGet(222);
 */
-    close(clientFileDiscriptor);
-   }
-   else{
-    printf("socket creation failed");
-   }
+    close(sockfd);
+//   }
+//   else{
+//    printf("socket creation failed");
+//   }
    return 0;
   }
 
@@ -135,14 +159,14 @@ int main(int argc, char *argv[])
         printf("Key value\n");
         sprintf(buffer1,"%d:%d;%s", c,key, value);
   //      printf("\n** Key value 1**\n");
-        l = write(clientFileDiscriptor,buffer1,strlen(buffer1));
+        l = write(sockfd,buffer1,strlen(buffer1));
   //      printf("\n**Key value 2: %s**\n",buffer1);
         if (l < 0)
         {
             error("ERROR writing to socket");
         }
           bzero(buffer1, 256);
-          p = read(clientFileDiscriptor,buffer1,255);
+          p = read(sockfd,buffer1,255);
           if (p < 0)
           {
               error("ERROR reading from socket");
@@ -156,13 +180,13 @@ int main(int argc, char *argv[])
       char buffer4[256];
       bzero(buffer2, 256);
       sprintf(buffer2,"%d:%d",c,key2);
-      l = write(clientFileDiscriptor,buffer2,strlen(buffer2));
+      l = write(sockfd,buffer2,strlen(buffer2));
       if (l < 0)
       {
           error("ERROR writing to socket");
       }
       bzero(buffer4,256);
-      p = read(clientFileDiscriptor,buffer4,255);
+      p = read(sockfd,buffer4,255);
       if (p < 0)
       {
           error("ERROR reading from socket");
@@ -176,14 +200,14 @@ int main(int argc, char *argv[])
       char buffer5[256];
       bzero(buffer3,256);
       sprintf(buffer3,"%d:%d",c,key1);
-      l = write(clientFileDiscriptor,buffer3,strlen(buffer3));
+      l = write(sockfd,buffer3,strlen(buffer3));
       printf("Key: %d\n", key1);
       if (l < 0)
       {
           error("ERROR writing to socket");
       }
       bzero(buffer5,256);
-      p = read(clientFileDiscriptor,buffer5,255);
+      p = read(sockfd,buffer5,255);
       if (p < 0)
       {
           error("ERROR reading from socket");

@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -35,6 +36,9 @@ int main(int argc, char *argv[])
   pthread_t t[20];
   int x;
   int yes=1;
+  int cur_cpu = 0;
+  cpu_set_t cpuset;
+  int s, j;
   head = (kvs_t *) malloc(sizeof(kvs_t));
 
   if (argc < 2)
@@ -67,12 +71,29 @@ int main(int argc, char *argv[])
       listen(serverFileDiscriptor,5);
       clilength = sizeof(cli_addr);
 
+      //sysconf(_SC_NPROCESSORS_ONLN);
+
      for(x=0;x<5;x++)      //can support 20 clients at a time
      {
+      CPU_ZERO(&cpuset);
       printf("Main thread: Waiting for new client\n");
       clientFileDiscriptor=accept(serverFileDiscriptor,(struct sockaddr *) &cli_addr, &clilength);
       printf("Main Thread: Connected to client %d\n",clientFileDiscriptor);
       pthread_create(&t[x],NULL,accept_clients,(void *)clientFileDiscriptor);
+      CPU_SET(cur_cpu, &cpuset);
+      s = pthread_setaffinity_np(t[x], sizeof(cpu_set_t), &cpuset);
+      if(s != 0){
+        printf("Set Affinity failed\n");
+        continue;
+      }
+      s = pthread_getaffinity_np(t[x], sizeof(cpu_set_t), &cpuset);
+      if (s != 0){
+        printf("Get Affinity failed\n");
+        continue;
+      }
+      printf("Set returned by pthread_getaffinity_np() contained:\n");
+               printf("    CPU %d\n", cur_cpu);
+      cur_cpu = (cur_cpu + 1) % 2;
      }
 
       for(x=0;x<3;x++)      //can support 20 clients at a time
@@ -95,9 +116,35 @@ int main(int argc, char *argv[])
     char buffer[256];
     char cont[256],file_name[256];
     int del;
-
     char *ab = "KEY ALREADY EXIST, BUT NEW VALUE ADDED";
 
+  //     pthread_t thread;
+
+  //     thread = pthread_self();
+
+       /* Set affinity mask to include CPUs 0 to 7 */
+/*
+       CPU_ZERO(&cpuset);
+       for (j = 0; j < 8; j++)
+       CPU_SET(j, &cpuset);
+
+       s = pthread_setaffinity_np(thread, sizeof(cpu_set_t), &cpuset);
+       if (s != 0)
+           handle_error_en(s, "pthread_setaffinity_np");
+
+       /* Check the actual affinity mask assigned to the thread
+
+       s = pthread_getaffinity_np(thread, sizeof(cpu_set_t), &cpuset);
+       if (s != 0)
+           handle_error_en(s, "pthread_getaffinity_np");
+
+       printf("Set returned by pthread_getaffinity_np() contained:\n");
+       for (j = 0; j < CPU_SETSIZE; j++)
+           if (CPU_ISSET(j, &cpuset))
+               printf("    CPU %d\n", j);
+
+       exit(EXIT_SUCCESS);
+*/
     while(1){
       bzero(buffer,256);
       n = read(clientFileDiscriptor,buffer,255);
@@ -145,7 +192,7 @@ int main(int argc, char *argv[])
           case 1:
             bzero(test1, 256);
             pthread_mutex_lock(&gSharedMemoryLock);
-            temp1 = putWrite(stoi, cont);
+            temp1 = putWrite(stoi, cont); // free temp1?
             sprintf(test1,"Key Value updated, key: %d, VAlue:%s",temp1->key, temp1->name);
             write(clientFileDiscriptor,test1,strlen(test1));
             pthread_mutex_unlock(&gSharedMemoryLock);
