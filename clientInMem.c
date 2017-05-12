@@ -19,9 +19,8 @@ void error(char *msg)
   void kvsGet(int key2);
   void kvsDelete(int key1);
 
-
 int sockfd;
-//int sockfd;
+time_t mytime;
 
 int main(int argc, char *argv[])
 {
@@ -46,29 +45,9 @@ int main(int argc, char *argv[])
       error("Error opening socket");
   }
 
-/*
-  if ((inet_aton(argv[1], &ip)) == 0) {
-              error("Error parsing IP address");
-  }
-*/
-  // printf("%s\n", inet_ntoa(ip));
-
-  //if ((server = gethostbyaddr((const void *)&ip, sizeof ip, AF_INET)) == NULL)
-  //        error("No name associated with IP address");
-
-  //  server = gethostbyname(argv[1]);
-
-/*
-  if (server == NULL)
-  {
-      fprintf(stderr,"Error! No such host exist\n");
-      exit(1);
-  }
-*/
   bzero((char *) &serv_addr,sizeof(serv_addr));
   serv_addr.sin_family = AF_INET;
 
-  // copy((char *)server->h_addr,(char *)&serv_addr.sin_addr.s_addr,server->h_length);
   serv_addr.sin_port = htons(portno);
   pton_err= inet_pton(AF_INET, argv[1], &serv_addr.sin_addr);
   if (pton_err <= 0) {
@@ -85,88 +64,56 @@ int main(int argc, char *argv[])
 
 
     kvsPut(1,"One");
-    sleep(1);
     kvsPut(2,"Two");
-    sleep(1);
     kvsPut(3,"Three");
-    sleep(1);
     kvsPut(4,"Four");
-    sleep(1);
     kvsPut(11,"OneOne");
-    sleep(1);
     kvsPut(22,"TwoTwo");
-    sleep(1);
     kvsPut(33,"ThreeThree");
-    sleep(1);
     kvsPut(44,"FourFour");
 
     kvsGet(1);
-    sleep(1);
     kvsGet(4);
-    sleep(1);
     kvsGet(22);
-    sleep(1);
     kvsGet(33);
-    sleep(1);
     kvsGet(11);
-    sleep(1);
     kvsGet(4);
-    sleep(1);
     kvsGet(2);
-    sleep(1);
     kvsGet(3);
-    sleep(1);
     kvsGet(44);
-/*
+
     kvsDelete(1);
     kvsDelete(33);
     kvsDelete(4);
     kvsDelete(44);
+    kvsDelete(22);
     kvsGet(1);
     kvsGet(33);
     kvsGet(4);
     kvsGet(11);
     kvsGet(2);
 
-    kvsPut(111,"OneOneOne");
-    kvsPut(222,"TwoTwoTwo");
-    kvsPut(333,"ThreeThreeThree");
-    kvsPut(444,"FourFourFour");
-
-    kvsGet(333);
-    kvsGet(444);
-    kvsGet(111);
-    kvsGet(222);
-*/
     close(sockfd);
-//   }
-//   else{
-//    printf("socket creation failed");
-//   }
-   return 0;
+    return 0;
   }
-
-//    close(sockfd); //New
-
-  //  return 0;
-  //}
-
 
     void kvsPut(int key, char *value){
         int c = 1,l, p;
         char buffer1[256];
         bzero(buffer1, 256);
-        printf("Key value\n");
+        printf("Key value \n");
         sprintf(buffer1,"%d:%d;%s", c,key, value);
-  //      printf("\n** Key value 1**\n");
+        mytime = time(NULL);
+        printf("PUT service is requested at: %s",ctime(&mytime));
         l = write(sockfd,buffer1,strlen(buffer1));
-  //      printf("\n**Key value 2: %s**\n",buffer1);
         if (l < 0)
         {
             error("ERROR writing to socket");
         }
           bzero(buffer1, 256);
           p = read(sockfd,buffer1,255);
+          mytime = time(NULL);
+          printf("PUT service response is received at: %s",ctime(&mytime));
           if (p < 0)
           {
               error("ERROR reading from socket");
@@ -180,6 +127,8 @@ int main(int argc, char *argv[])
       char buffer4[256];
       bzero(buffer2, 256);
       sprintf(buffer2,"%d:%d",c,key2);
+      mytime = time(NULL);
+      printf("GET service is requested at: %s",ctime(&mytime));
       l = write(sockfd,buffer2,strlen(buffer2));
       if (l < 0)
       {
@@ -187,6 +136,8 @@ int main(int argc, char *argv[])
       }
       bzero(buffer4,256);
       p = read(sockfd,buffer4,255);
+      mytime = time(NULL);
+      printf("GET service response is received at: %s",ctime(&mytime));
       if (p < 0)
       {
           error("ERROR reading from socket");
@@ -200,6 +151,8 @@ int main(int argc, char *argv[])
       char buffer5[256];
       bzero(buffer3,256);
       sprintf(buffer3,"%d:%d",c,key1);
+      mytime = time(NULL);
+      printf("DELETE service is requested at: %s",ctime(&mytime));
       l = write(sockfd,buffer3,strlen(buffer3));
       printf("Key: %d\n", key1);
       if (l < 0)
@@ -208,6 +161,8 @@ int main(int argc, char *argv[])
       }
       bzero(buffer5,256);
       p = read(sockfd,buffer5,255);
+      mytime = time(NULL);
+      printf("DELETE service response is received at: %s",ctime(&mytime));
       if (p < 0)
       {
           error("ERROR reading from socket");
